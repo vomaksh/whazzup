@@ -1,4 +1,4 @@
-# WazzUp
+# WhazzUp
 
 > This project is not affiliated with or endorsed by WhatsApp or Meta.
 
