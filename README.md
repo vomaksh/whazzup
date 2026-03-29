@@ -20,7 +20,7 @@ A minimal Electron wrapper for WhatsApp Web for Linux.
 ## Development
 
 ```sh
-git clone https://github.com/vomaksh/wazzup.git
+git clone https://github.com/vomaksh/whazzup.git
 cd wazzup
 pnpm install
 pnpm start
