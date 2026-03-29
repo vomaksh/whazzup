@@ -9,6 +9,14 @@ A minimal Electron wrapper for WhatsApp Web for Linux.
 - Runs WhatsApp Web in a dedicated desktop window
 - System tray support
 
+## Todos
+
+- [ ] Add dependabot which alerts for latest releases for electron
+- [ ] Build and release package updates via GitHub Actions
+- [ ] Config file support for overriding supported settings
+- [ ] Global keyboard shortcuts for bringing app to focus
+- [ ] Relaunching already launched app should bring app to focus
+
 ## Development
 
 ```sh
