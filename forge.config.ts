@@ -11,19 +11,12 @@ const config: ForgeConfig = {
   packagerConfig: {
     name: "WhazzUp",
     executableName: "whazzup",
-    // icon: "./assets/icons/app.png",
+    icon: "./assets/icons/app.png",
     asar: true,
     extraResource: ["assets"],
   },
   rebuildConfig: {},
-  makers: [
-    new MakerRpm({
-      options: {
-        icon: "./assets/icons/app.png",
-      },
-    }),
-    // new MakerDeb(),
-  ],
+  makers: [new MakerRpm(), new MakerDeb()],
   plugins: [
     new VitePlugin({
       // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.
