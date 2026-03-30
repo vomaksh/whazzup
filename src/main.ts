@@ -12,28 +12,36 @@ import {
 import path from "node:path";
 import started from "electron-squirrel-startup";
 import { existsSync } from "node:fs";
+import {
+  APP_NAME,
+  WHATSAPP_FONT_FAMILY,
+  WHATSAPP_FONT_FAMILY_MONO,
+  WHATSAPP_USER_AGENT,
+  WHATSAPP_WEB_URL,
+} from "./constants";
+import { AppConfig, AppConfigType } from "./config";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
 }
 
-const WHATSAPP_WEB_URL = "https://web.whatsapp.com";
-const WHATSAPP_USER_AGENT =
-  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36";
+app.setPath("userData", path.join(app.getPath("home"), ".config", APP_NAME));
+
+let config: AppConfigType = {};
 let tray: Tray = null;
 let isQuitting = false;
 
-function injectCSS(mainWindow: BrowserWindow) {
+function injectCSS(mainWindow: BrowserWindow, config: AppConfigType) {
   mainWindow.webContents.insertCSS(`
     :root {
-      --font-family-monospace: 'Google Sans Code', Consolas, Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono, Bitstream Vera Sans Mono, Courier New, Courier, monospace !important;
+      --font-family-monospace: ${config.fontFamilyMono ? config.fontFamilyMono + "," : ""}${WHATSAPP_FONT_FAMILY_MONO}
     }
     body {
-      font-family: 'Google Sans',Segoe UI,Helvetica Neue,Helvetica,Lucida Grande,Arial,Ubuntu,Cantarell,Fira Sans,sans-serif !important;
+      font-family: ${config.fontFamily ? config.fontFamily + "," : ""}${WHATSAPP_FONT_FAMILY}
     }
     .xdounpk {
-      font-family: Google Sans,Helvetica Neue, Helvetica, Arial, sans-serif !important;
+      font-family: ${config.fontFamily ? config.fontFamily + "," : ""}${WHATSAPP_FONT_FAMILY}
     }
   `);
 }
@@ -59,12 +67,17 @@ function openDownloadedFile(item: DownloadItem, filePath: string) {
   }
 }
 
-function createWindow() {
+async function createWindow() {
   if (!app.requestSingleInstanceLock()) {
     console.log("Application instance is already running. Quitting....");
     app.quit();
     return;
   }
+
+  // load config file if exists
+  const appConfig = new AppConfig(app);
+  config = await appConfig.getConfig();
+  console.log(JSON.stringify(config, null, 2));
 
   Menu.setApplicationMenu(null);
 
@@ -116,8 +129,10 @@ function createWindow() {
     return { action: "deny" };
   });
 
-  mainWindow.webContents.on("dom-ready", () => injectCSS(mainWindow));
-  mainWindow.webContents.on("did-finish-load", () => injectCSS(mainWindow));
+  mainWindow.webContents.on("dom-ready", () => injectCSS(mainWindow, config));
+  mainWindow.webContents.on("did-finish-load", () =>
+    injectCSS(mainWindow, config),
+  );
 
   if (!app.isPackaged) {
     mainWindow.webContents.openDevTools({
