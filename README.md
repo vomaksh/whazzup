@@ -13,7 +13,7 @@ A minimal Electron wrapper for WhatsApp Web for Linux.
 
 - [x] Add dependabot which alerts for package updates
 - [x] Build and release package updates via GitHub Actions
-- [ ] Config file support for overriding supported settings
+- [x] Config file support for overriding supported settings
 - [ ] Global keyboard shortcuts for bringing app to focus
 - [ ] Relaunching already launched app should bring app to focus
 
