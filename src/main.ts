@@ -3,6 +3,7 @@ import {
   app,
   BrowserWindow,
   DownloadItem,
+  globalShortcut,
   Menu,
   Notification,
   session,
@@ -71,13 +72,11 @@ async function createWindow() {
   if (!app.requestSingleInstanceLock()) {
     console.log("Application instance is already running. Quitting....");
     app.quit();
-    return;
   }
 
   // load config file if exists
   const appConfig = new AppConfig(app);
   config = await appConfig.getConfig();
-  console.log(JSON.stringify(config, null, 2));
 
   Menu.setApplicationMenu(null);
 
@@ -86,11 +85,22 @@ async function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
+    show: false,
     icon: getAssetPath("icons", "app.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       partition: appPartition,
     },
+  });
+
+  app.on("second-instance", function () {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.show();
+      mainWindow.focus();
+    }
   });
 
   const winSession = session.fromPartition(appPartition);
