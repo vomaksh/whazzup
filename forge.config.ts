@@ -16,7 +16,18 @@ const config: ForgeConfig = {
     extraResource: ["assets"],
   },
   rebuildConfig: {},
-  makers: [new MakerRpm(), new MakerDeb()],
+  makers: [
+    new MakerRpm({
+      options: {
+        icon: "./assets/icons/app.png",
+      },
+    }),
+    new MakerDeb({
+      options: {
+        icon: "./assets/icons/app.png",
+      },
+    }),
+  ],
   plugins: [
     new VitePlugin({
       // `build` can specify multiple entry builds, which can be Main process, Preload scripts, Worker process, etc.

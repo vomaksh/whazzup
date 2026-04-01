@@ -84,9 +84,8 @@ async function createWindow() {
   const appPartition = "persist:whatsapp";
 
   const mainWindow = new BrowserWindow({
-    width: 1000,
+    width: 1200,
     height: 800,
-    alwaysOnTop: true,
     icon: getAssetPath("icons", "app.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
