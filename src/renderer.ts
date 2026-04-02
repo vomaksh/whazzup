@@ -26,8 +26,7 @@
  * ```
  */
 
-import './index.css';
-
-console.log(
-  '👋 This message is being logged by "renderer.ts", included via Vite',
-);
+window.addEventListener("online", function () {
+  // @ts-ignore
+  window.electronAPI.retryLoad();
+});
