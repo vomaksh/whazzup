@@ -10,6 +10,7 @@ import {
   Tray,
   net,
   ipcMain,
+  nativeImage,
 } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
@@ -22,6 +23,7 @@ import {
   WHATSAPP_WEB_URL,
 } from "./constants";
 import { AppConfig, AppConfigType } from "./config";
+import { debounce, getUnreadCountFromFavicon } from "./utils";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -33,6 +35,11 @@ app.setPath("userData", path.join(app.getPath("home"), ".config", APP_NAME));
 let config: AppConfigType = {};
 let tray: Tray = null;
 let isQuitting = false;
+const winBounds = {
+  width: 1099,
+  height: 800,
+};
+let currentFaviconUrl: string;
 
 function injectCSS(mainWindow: BrowserWindow, config: AppConfigType) {
   mainWindow.webContents.insertCSS(`
@@ -84,24 +91,14 @@ async function createWindow() {
   const appPartition = "persist:whatsapp";
 
   const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    show: false,
+    width: winBounds.width,
+    height: winBounds.height,
+    show: true,
     icon: getAssetPath("icons", "app.png"),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       partition: appPartition,
     },
-  });
-
-  app.on("second-instance", function () {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) {
-        mainWindow.restore();
-      }
-      mainWindow.show();
-      mainWindow.focus();
-    }
   });
 
   ipcMain.on("retry-load", () => {
@@ -179,12 +176,35 @@ async function createWindow() {
     setupTrayContextMenu(app, mainWindow, tray);
   });
 
+  function saveBounds() {
+    const bounds = mainWindow.getBounds();
+    winBounds.width = bounds.width;
+    winBounds.height = bounds.height;
+  }
+
+  const debounced = debounce(saveBounds, 1000);
+  mainWindow.on("move", debounced);
+  mainWindow.on("resize", debounced);
+  mainWindow.on("close", saveBounds);
+
+  mainWindow.webContents.on("page-favicon-updated", async (ev, favicons) => {
+    if (favicons.length > 0) {
+      const newFaviconUrl = favicons[favicons.length - 1];
+      if (newFaviconUrl && newFaviconUrl !== currentFaviconUrl) {
+        const unreadCount = getUnreadCountFromFavicon(newFaviconUrl);
+        app.setBadgeCount(unreadCount);
+      }
+    }
+  });
+
   mainWindow.on("close", (e) => {
     if (!isQuitting) {
       e.preventDefault();
       mainWindow.hide();
     }
   });
+
+  return mainWindow;
 }
 
 function setupTrayContextMenu(app: App, mainWindow: BrowserWindow, tray: Tray) {
@@ -217,7 +237,19 @@ function setupTray(app: App, mainWindow: BrowserWindow) {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on("ready", createWindow);
+app.on("ready", async function () {
+  const mainWindow = await createWindow();
+
+  app.on("second-instance", function (e, commandLine) {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+      }
+      mainWindow.show();
+      mainWindow.focus();
+    }
+  });
+});
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
