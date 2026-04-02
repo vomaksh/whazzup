@@ -3,12 +3,13 @@ import {
   app,
   BrowserWindow,
   DownloadItem,
-  globalShortcut,
   Menu,
   Notification,
   session,
   shell,
   Tray,
+  net,
+  ipcMain,
 } from "electron";
 import path from "node:path";
 import started from "electron-squirrel-startup";
@@ -103,6 +104,12 @@ async function createWindow() {
     }
   });
 
+  ipcMain.on("retry-load", () => {
+    mainWindow.loadURL(WHATSAPP_WEB_URL, {
+      userAgent: WHATSAPP_USER_AGENT,
+    });
+  });
+
   const winSession = session.fromPartition(appPartition);
 
   winSession.on("will-download", (e, item) => {
@@ -126,9 +133,22 @@ async function createWindow() {
     }
   });
 
-  mainWindow.loadURL(WHATSAPP_WEB_URL, {
-    userAgent: WHATSAPP_USER_AGENT,
-  });
+  if (net.isOnline()) {
+    mainWindow.loadURL(WHATSAPP_WEB_URL, {
+      userAgent: WHATSAPP_USER_AGENT,
+    });
+  } else {
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+      mainWindow.loadURL(`${MAIN_WINDOW_VITE_DEV_SERVER_URL}/offline.html`);
+    } else {
+      mainWindow.loadFile(
+        path.join(
+          __dirname,
+          `../renderer/${MAIN_WINDOW_VITE_NAME}/offline.html`,
+        ),
+      );
+    }
+  }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith(WHATSAPP_WEB_URL)) {
