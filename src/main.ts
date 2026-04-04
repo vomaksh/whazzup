@@ -23,7 +23,12 @@ import {
   WHATSAPP_WEB_URL,
 } from "./constants";
 import { AppConfig, AppConfigType } from "./config";
-import { debounce, getUnreadCountFromFavicon } from "./utils";
+import {
+  debounce,
+  getDefaultTrayIcon,
+  getTrayFavicon,
+  getUnreadCountFromFavicon,
+} from "./utils";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -192,7 +197,13 @@ async function createWindow() {
       const newFaviconUrl = favicons[favicons.length - 1];
       if (newFaviconUrl && newFaviconUrl !== currentFaviconUrl) {
         const unreadCount = getUnreadCountFromFavicon(newFaviconUrl);
-        app.setBadgeCount(unreadCount);
+        if (unreadCount && unreadCount != "0") {
+          const trayNativeImg = await getTrayFavicon(unreadCount);
+          tray.setImage(trayNativeImg);
+        } else {
+          const trayIcon = await getDefaultTrayIcon();
+          tray.setImage(trayIcon);
+        }
       }
     }
   });
@@ -225,8 +236,9 @@ function setupTrayContextMenu(app: App, mainWindow: BrowserWindow, tray: Tray) {
   tray.setContextMenu(contextMenu);
 }
 
-function setupTray(app: App, mainWindow: BrowserWindow) {
-  tray = new Tray(getAssetPath("icons", "tray.png"));
+async function setupTray(app: App, mainWindow: BrowserWindow) {
+  const trayIcon = await getDefaultTrayIcon();
+  tray = new Tray(trayIcon);
   setupTrayContextMenu(app, mainWindow, tray);
   tray.setToolTip("WhatsApp");
   tray.on("click", function () {
